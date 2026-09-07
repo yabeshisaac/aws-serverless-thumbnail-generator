@@ -6,6 +6,10 @@ The solution is fully event-driven and requires no server provisioning or manage
 
 ## Architecture
 
+![AWS Serverless Thumbnail Generator Architecture](screenshots/architecture-diagram.png)
+
+### Architecture Flow
+
 ```text
 User uploads image
         │
@@ -17,17 +21,12 @@ Amazon S3 (Input Bucket)
 AWS Lambda
 (Python + Pillow)
         │
+        ├──────────────► Amazon CloudWatch
+        │                 Logs & Monitoring
         ▼
 Amazon S3 (Output Bucket)
         │
         └── thumbnails/<filename>-thumbnail.jpg
-
-AWS Lambda
-        │
-        ▼
-Amazon CloudWatch
-(Logs & Monitoring)
-```
 
 ## How It Works
 
