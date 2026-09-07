@@ -1,87 +1,175 @@
 # AWS Serverless Image Thumbnail Generator
 
-Event-driven serverless image processing pipeline built on AWS. Automatically generates a 300x300 thumbnail whenever an image is uploaded to S3 — no servers to manage.
+An event-driven serverless image processing pipeline built on AWS. When an image is uploaded to Amazon S3, an AWS Lambda function automatically processes the image and generates a thumbnail with a maximum size of **300×300 pixels while preserving the original aspect ratio**.
+
+The solution is fully event-driven and requires no server provisioning or management.
 
 ## Architecture
 
+```text
 User uploads image
-│
-▼
-S3 Bucket (input) ──► S3 Event Notification
-│
-▼
-AWS Lambda (Python + Pillow)
-│
-▼
-S3 Bucket (output) ── stores 300x300 thumbnail
-│
-▼
-Amazon CloudWatch ── logs & monitoring
+        │
+        ▼
+Amazon S3 (Input Bucket)
+        │
+        │ S3 ObjectCreated Event
+        ▼
+AWS Lambda
+(Python + Pillow)
+        │
+        ▼
+Amazon S3 (Output Bucket)
+        │
+        └── thumbnails/<filename>-thumbnail.jpg
 
+AWS Lambda
+        │
+        ▼
+Amazon CloudWatch
+(Logs & Monitoring)
+```
 
-**Flow:**
-1. An image is uploaded to the input S3 bucket.
-2. The upload triggers an S3 event notification, invoking an AWS Lambda function.
-3. The Lambda function (Python, using the Pillow library) resizes the image to 300x300 pixels.
-4. The resized thumbnail is written to the output S3 bucket.
-5. Execution logs and any errors are captured in Amazon CloudWatch for monitoring and debugging.
+## How It Works
+
+1. An image is uploaded to the input Amazon S3 bucket.
+2. The upload generates an `s3:ObjectCreated:*` event.
+3. The S3 event automatically invokes the AWS Lambda function.
+4. Lambda retrieves the uploaded image from S3.
+5. Python and Pillow resize the image to fit within **300×300 pixels while preserving its aspect ratio**.
+6. The processed image is converted to JPEG and stored in the output S3 bucket under the `thumbnails/` prefix.
+7. Lambda execution information and errors are recorded in Amazon CloudWatch Logs.
 
 ## Tech Stack
 
-| Component | Service |
+| Component | Technology / AWS Service |
 |---|---|
-| Storage (input/output) | Amazon S3 |
-| Compute | AWS Lambda |
-| Image processing | Python, Pillow |
-| Access control | IAM (least-privilege execution role) |
-| Monitoring/Logs | Amazon CloudWatch |
-| Region used | us-east-1 (N. Virginia) |
+| Object Storage | Amazon S3 |
+| Serverless Compute | AWS Lambda |
+| Image Processing | Python, Pillow |
+| Access Control | AWS IAM |
+| Monitoring & Logging | Amazon CloudWatch |
+| Architecture | Event-Driven / Serverless |
+| AWS Region | us-east-1 (N. Virginia) |
+
+## Lambda Processing Logic
+
+The Lambda function:
+
+- Extracts the source bucket and object key from the S3 event.
+- Retrieves the uploaded image using `s3:GetObject`.
+- Processes the image in memory using Python `BytesIO`.
+- Uses Pillow's `thumbnail()` method to resize the image while maintaining its aspect ratio.
+- Converts the generated thumbnail to JPEG.
+- Stores the result in the destination S3 bucket.
+
+Generated objects follow this structure:
+
+```text
+thumbnails/<original-filename>-thumbnail.jpg
+```
+
+The destination bucket is supplied to the Lambda function through the environment variable:
+
+```text
+DESTINATION_BUCKET
+```
+
+This avoids hardcoding the destination bucket name directly in the application code.
 
 ## IAM Permissions
 
-The Lambda execution role was scoped to least-privilege access:
-- `s3:GetObject` on the input bucket
-- `s3:PutObject` on the output bucket
-- CloudWatch Logs write access (`logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents`)
+The Lambda execution role provides the permissions required for the function to interact with S3 and write execution logs to CloudWatch.
+
+Required actions include:
+
+- `s3:GetObject` — retrieve images from the input bucket
+- `s3:PutObject` — store generated thumbnails in the output bucket
+- `logs:CreateLogGroup`
+- `logs:CreateLogStream`
+- `logs:PutLogEvents`
+
+> IAM permissions should be scoped to only the resources and actions required by the Lambda function.
 
 ## Project Structure
 
-.
-├── lambda_function.py # Lambda handler — resizes images using Pillow
-├── requirements.txt # Python dependencies (Pillow)
-├── screenshots/ # Console screenshots and test output
-└── README.md
+```text
+aws-serverless-thumbnail-generator/
+│
+├── lambda_function.py
+├── requirements.txt
+├── .gitignore
+├── README.md
+│
+└── screenshots/
+    ├── s3-event-trigger-config.png
+    ├── lambda-function-code.png
+    ├── cloudwatch-logs.png
+    ├── iam-role-permissions.png
+    └── before-after-thumbnail.png
+```
 
+## Deployment
 
-## Setup / How It Was Deployed
-
-1. Created two S3 buckets: an input bucket for original images and an output bucket for generated thumbnails.
-2. Wrote the Lambda function in Python using the Pillow library for image resizing.
-3. Packaged Pillow as a Lambda layer (since it's a compiled dependency not available by default in the Lambda runtime).
-4. Configured an S3 event notification on the input bucket to trigger the Lambda function on `s3:ObjectCreated:*` events.
-5. Attached an IAM execution role scoped to only the required S3 and CloudWatch actions.
-6. Tested by uploading sample images and verifying the resized thumbnail appeared in the output bucket, with logs visible in CloudWatch.
+1. Created separate Amazon S3 buckets for original images and generated thumbnails.
+2. Created the Lambda function using the Python runtime.
+3. Added Pillow to the Lambda environment using a Lambda Layer.
+4. Configured the `DESTINATION_BUCKET` environment variable with the output bucket name.
+5. Configured an S3 Event Notification on the input bucket for `s3:ObjectCreated:*` events.
+6. Connected the S3 event notification to the Lambda function.
+7. Configured the Lambda execution role with the required S3 and CloudWatch permissions.
+8. Uploaded a test image to the input bucket.
+9. Verified that Lambda executed automatically and created the thumbnail in the output bucket.
+10. Verified successful execution using Amazon CloudWatch Logs.
 
 ## Screenshots
 
-**S3 event trigger configuration:**
-![S3 event trigger config](screenshots/s3-event-trigger-config.png)
+### S3 Event Trigger Configuration
 
-**Lambda function code:**
-![Lambda function code](screenshots/lambda-function-code.png)
+Shows the S3 event notification configured to invoke the Lambda function when a new object is uploaded.
 
-**CloudWatch execution logs:**
-![CloudWatch logs](screenshots/cloudwatch-logs.png)
+![S3 Event Trigger Configuration](screenshots/s3-event-trigger-config.png)
 
-**IAM role permissions (least privilege):**
-![IAM role permissions](screenshots/iam-role-permissions.png)
+### Lambda Function
 
-**Original image vs. generated thumbnail:**
-![Before and after](screenshots/before-after-thumbnail.png)
+Python Lambda function responsible for processing uploaded images and generating thumbnails.
+
+![Lambda Function Code](screenshots/lambda-function-code.png)
+
+### CloudWatch Execution Logs
+
+Successful Lambda invocation and execution details captured by Amazon CloudWatch.
+
+![CloudWatch Logs](screenshots/cloudwatch-logs.png)
+
+### IAM Role Permissions
+
+Permissions used by the Lambda execution role for S3 access and CloudWatch logging.
+
+![IAM Role Permissions](screenshots/iam-role-permissions.png)
+
+### Original Image vs Generated Thumbnail
+
+Original uploaded image compared with the automatically generated thumbnail.
+
+![Original vs Thumbnail](screenshots/before-after-thumbnail.png)
 
 ## What I Learned
 
-- Designing event-driven, serverless architectures on AWS without provisioning or managing any servers.
-- Handling binary dependencies (Pillow) in Lambda using layers.
-- Writing least-privilege IAM policies scoped to specific S3 actions and buckets.
-- Using CloudWatch for debugging and monitoring serverless function execution.
+Through this project, I gained hands-on experience with:
+
+- Building an event-driven serverless architecture on AWS.
+- Integrating Amazon S3 events with AWS Lambda.
+- Processing images programmatically using Python and Pillow.
+- Managing external Python dependencies using Lambda Layers.
+- Configuring Lambda environment variables.
+- Working with IAM permissions for AWS service-to-service access.
+- Using Amazon CloudWatch Logs to monitor and troubleshoot Lambda executions.
+- Working with S3 object keys and event payloads in Python.
+
+## Key AWS Concepts Demonstrated
+
+`Amazon S3` • `AWS Lambda` • `AWS IAM` • `Amazon CloudWatch` • `Lambda Layers` • `S3 Event Notifications` • `Event-Driven Architecture` • `Serverless Computing`
+
+---
+
+This project was built as a hands-on implementation to strengthen my practical understanding of AWS serverless architectures, event-driven systems, IAM, and cloud monitoring.
