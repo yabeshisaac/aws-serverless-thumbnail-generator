@@ -1,26 +1,67 @@
 # AWS Serverless Image Thumbnail Generator
 
-A serverless image-processing web application built on AWS that allows users to upload an image from a browser, automatically generate an optimized thumbnail, preview the result, and download the generated thumbnail.
+A complete **serverless image-processing web application built on AWS**.
 
-The application combines a static frontend with an event-driven AWS backend using **Amazon S3, Amazon API Gateway, AWS Lambda, Python, Pillow, IAM, and Amazon CloudWatch**.
+Users can select an image directly from the browser, upload it to Amazon S3, and automatically generate an optimized thumbnail using AWS Lambda and Python/Pillow.
+
+The generated thumbnail is displayed back on the website and can be downloaded directly from the browser.
+
+The project demonstrates a complete browser-to-AWS serverless workflow using **Amazon S3, Amazon API Gateway, AWS Lambda, IAM, CloudWatch, Python, Pillow, HTML, CSS, and JavaScript**.
+
+---
+
+## Live Application
+
+The completed web application allows users to:
+
+- Choose an image from their device
+- Preview the original image
+- Upload the image securely to Amazon S3
+- Automatically trigger serverless image processing
+- Generate a thumbnail with a maximum size of **300×300 pixels**
+- Display the generated thumbnail on the same webpage
+- Download the generated thumbnail
+
+![AWS Serverless Thumbnail Generator Web Application](screenshots/aws-thumbnail.jpg)
+
+### Application Workflow
+
+```text
+Choose Image
+     ↓
+Generate Thumbnail
+     ↓
+Upload to Amazon S3
+     ↓
+AWS Lambda Processing
+     ↓
+Thumbnail Stored in S3
+     ↓
+Thumbnail Displayed in Browser
+     ↓
+Download Thumbnail
+```
 
 ---
 
 ## Features
 
+- Serverless image-processing architecture
 - Browser-based image upload
-- Static frontend hosted using Amazon S3
-- Secure uploads using S3 presigned URLs
-- Amazon API Gateway integration
-- AWS Lambda serverless backend
-- Event-driven thumbnail generation
+- Static website hosted using Amazon S3
+- REST-style communication through Amazon API Gateway HTTP API
+- Secure browser uploads using S3 presigned URLs
+- Event-driven Lambda invocation using S3 events
+- Automatic image resizing using Python and Pillow
 - Maximum thumbnail size of **300×300 pixels**
-- Original image aspect ratio preserved
-- Automatic thumbnail preview
-- Download generated thumbnail
-- Private source and destination S3 buckets
-- CloudWatch logging and monitoring
-- No servers to provision or manage
+- Original aspect ratio preserved
+- Separate S3 buckets for original images and generated thumbnails
+- Automatic thumbnail detection from the frontend
+- Generated thumbnail displayed without manually refreshing the page
+- Browser-based thumbnail download
+- IAM-based access control
+- Amazon CloudWatch logging and monitoring
+- Responsive HTML/CSS/JavaScript frontend
 
 ---
 
@@ -31,61 +72,213 @@ The application combines a static frontend with an event-driven AWS backend usin
 ### Architecture Flow
 
 ```text
-User Browser
-     │
-     ▼
-Amazon S3 Static Website
-     │
-     ▼
-Amazon API Gateway
-     │
-     ▼
-Upload API Lambda
-     │
-     │ Generates Presigned PUT URL
-     ▼
-Amazon S3
-Original Image Bucket
-     │
-     │ s3:ObjectCreated Event
-     ▼
-Thumbnail Processor Lambda
-(Python + Pillow)
-     │
-     ├──────────────► Amazon CloudWatch
-     │                 Logs & Monitoring
-     ▼
-Amazon S3
-Thumbnail Bucket
-     │
-     ▼
-Presigned GET URL
-     │
-     ▼
-Browser Preview
-     │
-     ▼
-Download Thumbnail
+                    USER / BROWSER
+                          │
+                          ▼
+                 S3 Static Website
+                 HTML + CSS + JS
+                          │
+                          ▼
+                  Amazon API Gateway
+                          │
+                          ▼
+               Upload API Lambda
+                          │
+                 Presigned S3 URL
+                          │
+                          ▼
+                Source S3 Bucket
+                          │
+                 ObjectCreated Event
+                          │
+                          ▼
+              Thumbnail Processor
+                   AWS Lambda
+                Python + Pillow
+                          │
+             ┌────────────┴────────────┐
+             │                         │
+             ▼                         ▼
+      Destination S3             CloudWatch Logs
+     thumbnails/*.jpg
+             │
+             ▼
+       API Gateway / Lambda
+             │
+             ▼
+     Browser Thumbnail Preview
+             │
+             ▼
+          Download
 ```
 
 ---
 
 ## How It Works
 
-1. The user opens the static web application hosted on Amazon S3.
-2. The user selects an image from their device.
-3. The frontend sends a request to Amazon API Gateway.
-4. API Gateway invokes the upload API Lambda function.
-5. Lambda generates a temporary S3 presigned upload URL.
-6. The browser uploads the image directly to the private source S3 bucket.
-7. The S3 upload generates an `s3:ObjectCreated:*` event.
-8. Amazon S3 automatically invokes the thumbnail processor Lambda.
-9. Lambda retrieves the uploaded image from S3.
-10. Python and Pillow resize the image to fit within **300×300 pixels while preserving its aspect ratio**.
-11. The generated JPEG thumbnail is stored in the destination S3 bucket under the `thumbnails/` prefix.
-12. The frontend checks for the generated thumbnail.
-13. Once available, the thumbnail is automatically displayed on the website.
-14. The user can download the generated thumbnail directly from the browser.
+### 1. Static Web Application
+
+The frontend is built using:
+
+- HTML
+- CSS
+- JavaScript
+
+The website is hosted using **Amazon S3 Static Website Hosting**.
+
+Users select an image through the browser and can immediately preview the original image before uploading it.
+
+---
+
+### 2. API Gateway
+
+The frontend communicates with the backend through an **Amazon API Gateway HTTP API**.
+
+API Gateway provides the public API endpoint used by the JavaScript frontend.
+
+![Amazon API Gateway](screenshots/api-gateway.png)
+
+The API connects the browser application to the serverless Lambda backend without requiring a traditional web server.
+
+---
+
+### 3. Upload API Lambda
+
+A dedicated Lambda function handles requests from the frontend.
+
+![Upload API Lambda](screenshots/upload-api-lambda.png)
+
+The function generates a temporary **Amazon S3 presigned URL**.
+
+This allows the browser to upload the selected image directly to the private source S3 bucket without exposing AWS credentials to the frontend.
+
+Conceptually:
+
+```text
+Browser
+   │
+   │ Request upload URL
+   ▼
+API Gateway
+   │
+   ▼
+Upload Lambda
+   │
+   │ Generate Presigned URL
+   ▼
+Browser
+   │
+   │ PUT Image
+   ▼
+Source S3 Bucket
+```
+
+---
+
+### 4. Source S3 Bucket
+
+The original image is uploaded to the source Amazon S3 bucket.
+
+When the object is created, Amazon S3 automatically generates an:
+
+```text
+s3:ObjectCreated:*
+```
+
+event.
+
+The event invokes the thumbnail-processing Lambda function.
+
+---
+
+### 5. Thumbnail Processing Lambda
+
+The Lambda function retrieves the uploaded image from Amazon S3 and processes it using **Python and Pillow**.
+
+The processing logic:
+
+- Reads the S3 event
+- Extracts the source bucket and object key
+- Downloads the image using `s3:GetObject`
+- Loads the image into memory
+- Resizes it using Pillow
+- Preserves the original aspect ratio
+- Generates a thumbnail with a maximum size of **300×300 pixels**
+- Converts the processed image to JPEG
+- Uploads the result to the destination S3 bucket
+
+The core resizing operation uses:
+
+```python
+image.thumbnail((300, 300))
+```
+
+Unlike forcing an image to exactly 300×300, Pillow's `thumbnail()` operation preserves the original aspect ratio while ensuring that neither dimension exceeds 300 pixels.
+
+---
+
+## Generated Thumbnail Structure
+
+Generated thumbnails are stored under the `thumbnails/` prefix.
+
+Example:
+
+```text
+thumbnails/<filename>-thumbnail.jpg
+```
+
+Example structure:
+
+```text
+Destination S3 Bucket
+│
+└── thumbnails/
+    ├── image1-thumbnail.jpg
+    ├── image2-thumbnail.jpg
+    └── image3-thumbnail.jpg
+```
+
+---
+
+## Automatic Thumbnail Display
+
+After the original image is uploaded, the frontend waits for the event-driven Lambda processing to complete.
+
+The application checks for the generated thumbnail and displays it automatically when it becomes available.
+
+This creates the following asynchronous workflow:
+
+```text
+Upload Original
+      ↓
+S3 Event
+      ↓
+Lambda Processing
+      ↓
+Thumbnail Created
+      ↓
+Frontend Detects Result
+      ↓
+Thumbnail Displayed
+```
+
+The user does not need to manually open the destination S3 bucket or refresh the application.
+
+---
+
+## Thumbnail Download
+
+After processing is complete, the generated thumbnail appears inside the **Generated Thumbnail** section of the application.
+
+The user can then download the generated image directly from the browser.
+
+![Original Image and Generated Thumbnail](screenshots/aws-thumbnail.jpg)
+
+This completes the full workflow:
+
+```text
+Upload → Process → Preview → Download
+```
 
 ---
 
@@ -94,151 +287,20 @@ Download Thumbnail
 | Component | Technology / AWS Service |
 |---|---|
 | Frontend | HTML, CSS, JavaScript |
-| Static Website Hosting | Amazon S3 |
-| API Layer | Amazon API Gateway |
-| Serverless Compute | AWS Lambda |
+| Website Hosting | Amazon S3 Static Website Hosting |
+| API Layer | Amazon API Gateway HTTP API |
+| Upload Backend | AWS Lambda |
+| Image Processing | AWS Lambda |
+| Programming Language | Python |
+| Image Library | Pillow |
 | Object Storage | Amazon S3 |
-| Image Processing | Python, Pillow |
-| Secure File Access | S3 Presigned URLs |
-| Event Processing | S3 Event Notifications |
+| Secure Upload | S3 Presigned URLs |
+| Event Trigger | S3 Event Notifications |
 | Access Control | AWS IAM |
-| Monitoring & Logging | Amazon CloudWatch |
+| Monitoring | Amazon CloudWatch |
 | Architecture | Serverless / Event-Driven |
-
----
-
-## Serverless Backend
-
-The backend contains two main Lambda responsibilities.
-
-### Upload API Lambda
-
-The upload API Lambda is connected to Amazon API Gateway.
-
-It is responsible for:
-
-- Receiving requests from the frontend
-- Generating unique S3 object keys
-- Creating presigned PUT URLs for image uploads
-- Checking whether generated thumbnails are available
-- Generating temporary URLs for retrieving thumbnails
-
-This allows the frontend to interact with private S3 buckets without exposing AWS credentials in the browser.
-
-### Thumbnail Processor Lambda
-
-The thumbnail processor Lambda is automatically triggered by Amazon S3.
-
-It:
-
-- Reads the S3 event payload
-- Extracts the source bucket and object key
-- Retrieves the uploaded image using `s3:GetObject`
-- Processes the image in memory using Python `BytesIO`
-- Uses Pillow to resize the image
-- Preserves the original aspect ratio
-- Converts the processed image to JPEG
-- Stores the generated thumbnail using `s3:PutObject`
-
-Generated thumbnails follow the structure:
-
-```text
-thumbnails/<filename>-thumbnail.jpg
-```
-
----
-
-## Secure Upload Using Presigned URLs
-
-The source image bucket remains private.
-
-Instead of allowing public uploads directly to the bucket, the frontend requests a temporary **presigned PUT URL** from the serverless backend.
-
-```text
-Browser
-   │
-   │ Request Upload URL
-   ▼
-API Gateway
-   │
-   ▼
-AWS Lambda
-   │
-   │ Generate Presigned URL
-   ▼
-Browser ─────────────► Private Amazon S3
-        Direct Upload
-```
-
-This design means:
-
-- AWS credentials are not stored in frontend JavaScript.
-- The source image bucket does not require public write access.
-- Upload URLs are temporary.
-- S3 handles the actual image upload directly.
-
-Generated thumbnails are also retrieved using temporary presigned URLs.
-
----
-
-## Event-Driven Processing
-
-Thumbnail generation is asynchronous and event-driven.
-
-```text
-Image Uploaded
-      │
-      ▼
-Amazon S3
-      │
-      │ ObjectCreated
-      ▼
-AWS Lambda
-      │
-      ▼
-Process Image
-      │
-      ▼
-Thumbnail S3 Bucket
-```
-
-The frontend does not need to directly invoke the thumbnail processor.
-
-Amazon S3 automatically triggers the processing Lambda whenever a new image is uploaded.
-
----
-
-## IAM Permissions
-
-Lambda execution roles provide the permissions required for each function to interact with AWS services.
-
-Important permissions include:
-
-- `s3:GetObject` — retrieve images and generated thumbnails
-- `s3:PutObject` — upload/store objects in S3
-- `logs:CreateLogGroup`
-- `logs:CreateLogStream`
-- `logs:PutLogEvents`
-
-IAM permissions should follow the **principle of least privilege** and be scoped to the required S3 resources.
-
----
-
-## CORS Configuration
-
-The frontend and backend communicate across different AWS endpoints.
-
-Cross-Origin Resource Sharing (**CORS**) is configured to allow the required browser requests between:
-
-```text
-S3 Static Website
-        │
-        ├──► API Gateway
-        │
-        └──► Amazon S3 Presigned URL
-```
-
-Only the required HTTP operations are allowed while the source and destination image buckets remain private.
+| Website Region | ap-south-2 (Hyderabad) |
+| Image Processing S3 Resources | us-east-1 (N. Virginia) |
 
 ---
 
@@ -278,109 +340,250 @@ aws-serverless-thumbnail-generator/
 
 ---
 
-## Deployment Overview
+## Frontend
 
-1. Created separate S3 buckets for original images and generated thumbnails.
-2. Created an additional S3 bucket for the static web application.
-3. Enabled S3 static website hosting.
-4. Built the frontend using HTML, CSS, and JavaScript.
-5. Created an Amazon API Gateway HTTP API.
-6. Created an upload API Lambda function.
-7. Implemented S3 presigned URL generation.
-8. Configured CORS for browser requests.
-9. Created the thumbnail processor Lambda function.
-10. Added Pillow for image processing.
-11. Configured an S3 `ObjectCreated` event notification.
-12. Connected the source S3 bucket to the thumbnail processor Lambda.
-13. Configured IAM permissions for S3 and CloudWatch.
-14. Connected the frontend to API Gateway.
-15. Implemented automatic checking for generated thumbnails.
-16. Added browser preview functionality.
-17. Added thumbnail download functionality.
-18. Tested the complete browser-to-AWS workflow.
+The frontend is located inside:
 
----
+```text
+frontend/
+```
 
-# Screenshots
+It contains:
 
-## Working Web Application
+```text
+index.html
+style.css
+script.js
+```
 
-The completed application showing the original uploaded image alongside the automatically generated thumbnail.
+### `index.html`
 
-The generated thumbnail can also be downloaded directly from the browser.
+Defines the user interface including:
 
-![Working Serverless Thumbnail Generator](screenshots/aws-thumbnail.jpg)
+- Image selection
+- Original image preview
+- Generate Thumbnail button
+- Generated thumbnail preview
+- Download functionality
+- Architecture flow display
 
----
+### `style.css`
 
-## API Gateway
+Provides the responsive UI styling for desktop and mobile devices.
 
-Amazon API Gateway provides the HTTP API used by the frontend to communicate with the serverless backend.
+### `script.js`
 
-![Amazon API Gateway](screenshots/api-gateway.png)
+Handles the browser-side workflow including:
 
----
-
-## Upload API Lambda
-
-The upload API Lambda generates presigned URLs and handles requests from the frontend through API Gateway.
-
-![Upload API Lambda](screenshots/upload-api-lambda.png)
+- Reading the selected image
+- Displaying the original image preview
+- Calling API Gateway
+- Uploading the image through a presigned S3 URL
+- Checking for the generated thumbnail
+- Displaying the processed thumbnail
+- Downloading the generated image
 
 ---
 
-## S3 Event Trigger
+## Lambda Functions
 
-Amazon S3 automatically invokes the thumbnail processor when a new image is uploaded.
+The project contains two main Lambda responsibilities.
+
+### Upload API Lambda
+
+Location:
+
+```text
+lambda/upload_api/lambda_function.py
+```
+
+Responsibilities:
+
+- Receive requests from API Gateway
+- Generate unique S3 object keys
+- Generate presigned upload URLs
+- Return information required by the frontend
+- Check whether generated thumbnails are available
+- Provide access to generated results
+
+### Thumbnail Processor Lambda
+
+Location:
+
+```text
+lambda/thumbnail_processor/lambda_function.py
+```
+
+Responsibilities:
+
+- Receive S3 `ObjectCreated` events
+- Retrieve uploaded images
+- Process images using Pillow
+- Generate thumbnails
+- Store processed images in the destination S3 bucket
+
+---
+
+## S3 Event-Driven Processing
+
+The source S3 bucket is configured to invoke the thumbnail Lambda automatically whenever a new object is uploaded.
 
 ![S3 Event Trigger Configuration](screenshots/s3-event-trigger-config.png)
 
+This removes the need for:
+
+- Dedicated servers
+- Background polling workers
+- Manually starting the image-processing function
+
+Amazon S3 acts as the event source and AWS Lambda performs the processing on demand.
+
 ---
 
-## Thumbnail Processor Lambda
+## Lambda Processing Code
 
-The processing Lambda uses Python and Pillow to resize uploaded images and generate thumbnails.
+The thumbnail-generation function is implemented using Python.
 
 ![Lambda Function Code](screenshots/lambda-function-code.png)
 
+The function processes images entirely in memory using Python `BytesIO`, reducing the need for temporary persistent storage.
+
+The destination bucket can be provided to the Lambda function through:
+
+```text
+DESTINATION_BUCKET
+```
+
+This keeps environment-specific configuration separate from the application logic.
+
 ---
 
-## CloudWatch Logs
+## IAM Permissions
 
-Lambda execution information and errors are captured using Amazon CloudWatch Logs.
-
-![CloudWatch Logs](screenshots/cloudwatch-logs.png)
-
----
-
-## IAM Role Permissions
-
-AWS IAM controls the permissions Lambda functions use when accessing S3 and CloudWatch.
+IAM roles provide the Lambda functions with the AWS permissions required to perform their tasks.
 
 ![IAM Role Permissions](screenshots/iam-role-permissions.png)
 
+Typical required permissions include:
+
+```text
+s3:GetObject
+s3:PutObject
+logs:CreateLogGroup
+logs:CreateLogStream
+logs:PutLogEvents
+```
+
+The upload API Lambda requires appropriate access to generate S3 operations for the source and destination objects.
+
+The thumbnail processor requires permission to read original images and write generated thumbnails.
+
+IAM permissions should follow the **principle of least privilege** and be scoped to only the required resources and actions.
+
 ---
 
-## Original Image vs Generated Thumbnail
+## CloudWatch Monitoring
 
-Example showing the original image and the automatically generated thumbnail.
+AWS Lambda automatically integrates with Amazon CloudWatch for execution logging.
 
-![Original Image vs Generated Thumbnail](screenshots/before-after-thumbnail.png)
+![CloudWatch Logs](screenshots/cloudwatch-logs.png)
+
+CloudWatch was used to:
+
+- Verify Lambda invocations
+- Confirm successful execution
+- Inspect processing errors
+- Troubleshoot S3 and Lambda integration
+- Monitor the event-driven workflow
+
+---
+
+## Original vs Generated Thumbnail
+
+The image-processing result can also be verified by comparing the original image with the generated output.
+
+![Original vs Generated Thumbnail](screenshots/before-after-thumbnail.png)
+
+The thumbnail remains proportional to the original image because the processing logic preserves its aspect ratio.
+
+---
+
+## Deployment Process
+
+The project was implemented using the following workflow:
+
+1. Created separate Amazon S3 buckets for original images and generated thumbnails.
+2. Created the image-processing AWS Lambda function.
+3. Added Pillow support to the Lambda environment.
+4. Configured the destination S3 bucket.
+5. Added the required IAM permissions.
+6. Configured the S3 `ObjectCreated` event notification.
+7. Connected the source S3 bucket to the thumbnail processor Lambda.
+8. Tested automatic thumbnail generation using direct S3 uploads.
+9. Created an S3 bucket for the static web application.
+10. Enabled S3 Static Website Hosting.
+11. Developed the HTML, CSS, and JavaScript frontend.
+12. Created the upload API Lambda.
+13. Created the Amazon API Gateway HTTP API.
+14. Connected the frontend to API Gateway.
+15. Implemented presigned S3 uploads.
+16. Configured the required CORS settings.
+17. Implemented automatic checking for generated thumbnails.
+18. Added browser-based original image preview.
+19. Added generated thumbnail preview.
+20. Added direct thumbnail download functionality.
+21. Tested the complete browser-to-AWS workflow.
 
 ---
 
 ## Security Design
 
-The project demonstrates several AWS security practices:
+The architecture avoids placing AWS credentials inside frontend JavaScript.
 
-- Source images are stored in a private S3 bucket.
-- Generated thumbnails are stored in a private S3 bucket.
-- Browser uploads use temporary S3 presigned URLs.
-- AWS credentials are never stored in frontend JavaScript.
-- Lambda functions use IAM execution roles.
-- IAM permissions are scoped to required AWS resources.
-- CORS controls browser requests between different origins.
-- Public access is limited to the static website content required for the application.
+Instead, the browser obtains temporary presigned URLs from the serverless backend.
+
+```text
+Browser
+   ↓
+API Gateway
+   ↓
+Lambda
+   ↓
+Temporary Presigned URL
+   ↓
+Direct S3 Operation
+```
+
+This allows the application to interact with private S3 resources without exposing permanent IAM access keys.
+
+Additional security practices used in the architecture include:
+
+- IAM execution roles
+- Least-privilege permissions
+- Private source and destination image buckets
+- CORS configuration
+- Temporary presigned URLs
+- Separation between website hosting and image-storage buckets
+
+---
+
+## Serverless Design
+
+The application does not require EC2 instances or a continuously running application server.
+
+The major components are managed AWS services:
+
+```text
+Amazon S3
+Amazon API Gateway
+AWS Lambda
+Amazon CloudWatch
+AWS IAM
+```
+
+Lambda executes only when required, while S3 provides both object storage and static website hosting.
+
+This demonstrates a lightweight event-driven serverless architecture.
 
 ---
 
@@ -388,25 +591,29 @@ The project demonstrates several AWS security practices:
 
 Through this project, I gained hands-on experience with:
 
-- Designing a serverless web application on AWS
-- Building event-driven architectures with Amazon S3 and AWS Lambda
-- Hosting a frontend using S3 static website hosting
-- Connecting JavaScript applications to Amazon API Gateway
-- Generating and using S3 presigned URLs
-- Uploading files securely from a browser to private S3 buckets
+- Building a complete serverless application on AWS
+- Creating event-driven architectures
+- Integrating Amazon S3 with AWS Lambda
+- Building HTTP APIs using Amazon API Gateway
+- Connecting a JavaScript frontend to AWS services
+- Generating and using Amazon S3 presigned URLs
+- Configuring S3 CORS
+- Hosting static websites using Amazon S3
 - Processing images using Python and Pillow
-- Configuring S3 Event Notifications
-- Working with IAM execution roles and permissions
-- Configuring CORS for browser-based AWS applications
-- Monitoring and troubleshooting Lambda with CloudWatch
-- Handling asynchronous image-processing workflows
-- Connecting multiple AWS services into an end-to-end application
+- Working with Lambda Layers and dependencies
+- Managing Lambda environment configuration
+- Creating IAM permissions for service-to-service communication
+- Using CloudWatch Logs for troubleshooting
+- Handling asynchronous serverless workflows
+- Working with S3 object keys and event payloads
+- Building browser upload and download functionality
+- Debugging API Gateway, Lambda, S3, and browser integration
 
 ---
 
 ## Key AWS Concepts Demonstrated
 
-`Amazon S3` • `AWS Lambda` • `Amazon API Gateway` • `AWS IAM` • `Amazon CloudWatch` • `S3 Presigned URLs` • `S3 Event Notifications` • `S3 Static Website Hosting` • `CORS` • `Event-Driven Architecture` • `Serverless Computing`
+`Amazon S3` • `AWS Lambda` • `Amazon API Gateway` • `AWS IAM` • `Amazon CloudWatch` • `S3 Presigned URLs` • `S3 Static Website Hosting` • `S3 Event Notifications` • `Lambda Layers` • `CORS` • `Event-Driven Architecture` • `Serverless Computing`
 
 ---
 
@@ -415,23 +622,31 @@ Through this project, I gained hands-on experience with:
 The final application provides an end-to-end serverless workflow:
 
 ```text
-Select Image
-     ↓
-Upload from Browser
-     ↓
-Secure S3 Upload
-     ↓
-Automatic Lambda Processing
-     ↓
-Thumbnail Generated
-     ↓
-Displayed in Browser
-     ↓
-Download Thumbnail
+User
+ ↓
+Web Application
+ ↓
+API Gateway
+ ↓
+Lambda
+ ↓
+Presigned S3 Upload
+ ↓
+Source S3
+ ↓
+S3 Event
+ ↓
+Thumbnail Lambda
+ ↓
+Destination S3
+ ↓
+Generated Thumbnail
+ ↓
+Browser Preview
+ ↓
+Download
 ```
 
-The entire image-processing workflow runs using managed AWS services without requiring a continuously running application server.
+The project started as a simple S3-triggered Lambda image processor and was extended into a functional browser-based serverless application.
 
----
-
-Built as a hands-on AWS project to strengthen practical knowledge of **serverless architecture, event-driven systems, API integration, secure S3 access, IAM, and cloud monitoring**.
+It demonstrates both the underlying AWS infrastructure and a working user-facing application built entirely around managed AWS services.
