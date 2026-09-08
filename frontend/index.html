@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Serverless Thumbnail Generator</title>
+
+  <link rel="stylesheet" href="style.css?v=7">
+</head>
+
+<body>
+
+  <main class="container">
+
+    <div class="header">
+
+      <div class="aws-badge">
+        AWS SERVERLESS
+      </div>
+
+      <h1>Serverless Thumbnail Generator</h1>
+
+      <p class="subtitle">
+        Upload an image and AWS will automatically generate an optimized thumbnail.
+      </p>
+
+    </div>
+
+
+    <section class="upload-section">
+
+      <div class="upload-row">
+
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/png,image/jpeg,image/jpg,image/webp"
+          hidden
+        >
+
+        <label for="fileInput" class="file-button">
+          <span class="upload-icon">↑</span>
+          Choose Image
+        </label>
+
+        <span id="fileName">
+          No file chosen
+        </span>
+
+        <button id="uploadBtn">
+          Generate Thumbnail
+        </button>
+
+      </div>
+
+      <p id="status"></p>
+
+    </section>
+
+
+    <section class="preview-grid">
+
+      <!-- ORIGINAL IMAGE -->
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <span>Original Image</span>
+
+          <span class="status-badge">
+            SOURCE
+          </span>
+
+        </div>
+
+        <div class="image-area">
+
+          <div
+            id="originalPlaceholder"
+            class="placeholder"
+          >
+
+            <div class="placeholder-icon">
+              ▧
+            </div>
+
+            <p>
+              Select an image to preview
+            </p>
+
+          </div>
+
+          <img
+            id="originalPreview"
+            class="preview-image"
+            alt="Original image preview"
+          >
+
+        </div>
+
+      </div>
+
+
+      <!-- GENERATED THUMBNAIL -->
+
+      <div class="card">
+
+        <div class="card-header">
+
+          <span>Generated Thumbnail</span>
+
+          <span class="status-badge destination">
+            DESTINATION
+          </span>
+
+        </div>
+
+        <div class="image-area thumbnail-area">
+
+          <div
+            id="thumbnailPlaceholder"
+            class="placeholder"
+          >
+
+            <div class="placeholder-icon">
+              ⚡
+            </div>
+
+            <p>
+              Your AWS-generated thumbnail will appear here
+            </p>
+
+          </div>
+
+          <div
+            id="thumbnailResult"
+            class="thumbnail-result"
+          >
+
+            <img
+              id="thumbnailPreview"
+              class="preview-image"
+              alt="Generated thumbnail"
+            >
+
+            <button
+              id="downloadBtn"
+              class="download-button"
+              type="button"
+            >
+              ↓ Download Thumbnail
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <div class="architecture-flow">
+
+      <span>Browser</span>
+
+      <b>→</b>
+
+      <span>API Gateway</span>
+
+      <b>→</b>
+
+      <span>Amazon S3</span>
+
+      <b>→</b>
+
+      <span>AWS Lambda</span>
+
+      <b>→</b>
+
+      <span>Thumbnail S3</span>
+
+    </div>
+
+
+    <footer>
+      Built with Amazon S3 • API Gateway • AWS Lambda • Serverless Architecture
+    </footer>
+
+  </main>
+
+
+  <script src="script.js?v=7"></script>
+
+</body>
+
+</html>

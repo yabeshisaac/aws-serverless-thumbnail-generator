@@ -1,0 +1,496 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Arial,
+    sans-serif;
+
+  background:
+    radial-gradient(
+      circle at top,
+      #ffffff 0%,
+      #f4f7fb 50%,
+      #edf1f6 100%
+    );
+
+  color: #172033;
+}
+
+
+/* MAIN */
+
+.container {
+  max-width: 1050px;
+  margin: auto;
+  padding: 70px 30px 35px;
+}
+
+
+/* HEADER */
+
+.header {
+  text-align: center;
+}
+
+.aws-badge {
+  display: inline-block;
+
+  padding: 7px 13px;
+
+  border-radius: 20px;
+
+  background: #fff3df;
+  color: #c66a00;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin: 0;
+
+  color: #172033;
+
+  font-size: 38px;
+  font-weight: 750;
+  letter-spacing: -1px;
+}
+
+.subtitle {
+  color: #697386;
+
+  font-size: 16px;
+
+  margin-top: 13px;
+}
+
+
+/* UPLOAD */
+
+.upload-section {
+  margin-top: 38px;
+}
+
+.upload-row {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 14px;
+
+  flex-wrap: wrap;
+}
+
+
+/* CHOOSE IMAGE */
+
+.file-button {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 9px;
+
+  padding: 13px 23px;
+
+  background: #232f3e;
+
+  color: white;
+
+  border-radius: 8px;
+
+  font-size: 15px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 4px 10px rgba(35, 47, 62, 0.18);
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.file-button:hover {
+  background: #37475a;
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 18px rgba(35, 47, 62, 0.25);
+}
+
+.file-button:active {
+  transform: translateY(0);
+}
+
+.upload-icon {
+  font-size: 20px;
+  line-height: 10px;
+}
+
+
+/* FILE NAME */
+
+#fileName {
+  min-width: 150px;
+  max-width: 230px;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #697386;
+
+  font-size: 14px;
+}
+
+
+/* GENERATE BUTTON */
+
+#uploadBtn {
+  border: none;
+
+  padding: 14px 25px;
+
+  border-radius: 8px;
+
+  background: #ff9900;
+
+  color: #172033;
+
+  font-size: 15px;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 4px 12px rgba(255, 153, 0, 0.25);
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#uploadBtn:hover {
+  background: #ec8b00;
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 18px rgba(255, 153, 0, 0.35);
+}
+
+#uploadBtn:active {
+  transform: translateY(0);
+}
+
+#uploadBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+
+/* STATUS */
+
+#status {
+  min-height: 22px;
+
+  margin: 18px 0 0;
+
+  text-align: center;
+
+  color: #596579;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+/* CARDS */
+
+.preview-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 24px;
+
+  margin-top: 20px;
+}
+
+.card {
+  overflow: hidden;
+
+  background: rgba(255, 255, 255, 0.95);
+
+  border: 1px solid #e2e7ee;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 8px 25px rgba(24, 39, 75, 0.08);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+
+  box-shadow:
+    0 14px 32px rgba(24, 39, 75, 0.13);
+}
+
+
+/* CARD HEADER */
+
+.card-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 17px 20px;
+
+  border-bottom: 1px solid #edf0f4;
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+
+/* BADGES */
+
+.status-badge {
+  padding: 5px 9px;
+
+  border-radius: 20px;
+
+  background: #e8f1ff;
+  color: #2764b8;
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+}
+
+.status-badge.destination {
+  background: #fff0d9;
+  color: #bb6500;
+}
+
+
+/* IMAGE AREA */
+
+.image-area {
+  min-height: 320px;
+
+  padding: 20px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+}
+
+.preview-image {
+  display: none;
+
+  max-width: 100%;
+  max-height: 285px;
+
+  object-fit: contain;
+
+  border-radius: 8px;
+}
+
+
+/* PLACEHOLDER */
+
+.placeholder {
+  text-align: center;
+
+  color: #98a1b2;
+}
+
+.placeholder-icon {
+  width: 55px;
+  height: 55px;
+
+  margin: 0 auto 12px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  background: #f1f4f8;
+
+  font-size: 25px;
+}
+
+.placeholder p {
+  margin: 0;
+
+  font-size: 13px;
+}
+
+
+/* THUMBNAIL RESULT */
+
+.thumbnail-result {
+  display: none;
+
+  width: 100%;
+
+  text-align: center;
+}
+
+.thumbnail-result .preview-image {
+  margin: 0 auto;
+}
+
+
+/* DOWNLOAD BUTTON */
+
+.download-button {
+  display: none;
+
+  margin: 18px auto 0;
+
+  padding: 12px 21px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: #232f3e;
+  color: white;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 4px 10px rgba(35, 47, 62, 0.18);
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.download-button:hover {
+  background: #37475a;
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 18px rgba(35, 47, 62, 0.25);
+}
+
+
+/* ARCHITECTURE FLOW */
+
+.architecture-flow {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  gap: 11px;
+
+  margin-top: 30px;
+
+  color: #7a8496;
+
+  font-size: 12px;
+}
+
+.architecture-flow span {
+  padding: 7px 11px;
+
+  background: white;
+
+  border: 1px solid #e1e6ed;
+
+  border-radius: 6px;
+}
+
+.architecture-flow b {
+  color: #ff9900;
+}
+
+
+/* FOOTER */
+
+footer {
+  margin-top: 30px;
+
+  text-align: center;
+
+  color: #9aa3b1;
+
+  font-size: 11px;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 750px) {
+
+  .container {
+    padding: 45px 18px 25px;
+  }
+
+  h1 {
+    font-size: 29px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .image-area {
+    min-height: 260px;
+  }
+
+  #fileName {
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+  }
+
+}
